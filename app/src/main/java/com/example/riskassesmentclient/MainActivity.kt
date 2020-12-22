@@ -17,7 +17,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var riskAutomationApiService: RiskAutomationApiService
 
-    private var companies: ArrayList<Company>? = null
+    private var companies = arrayListOf<Company>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,6 +66,28 @@ class MainActivity : AppCompatActivity() {
                     .show()
             }
         }
+
+        createBtn.setOnClickListener {
+            createCompany()
+        }
+
+        editBtn.setOnClickListener {
+            if (!companies.isNullOrEmpty()) {
+                editCompany()
+            } else {
+                Toast.makeText(this@MainActivity, "Nothing to edit", Toast.LENGTH_SHORT)
+                    .show()
+            }
+        }
+
+        countBtn.setOnClickListener {
+            if (!companies.isNullOrEmpty()) {
+
+            } else {
+                Toast.makeText(this@MainActivity, "Nothing to count", Toast.LENGTH_SHORT)
+                    .show()
+            }
+        }
     }
 
     private fun initCompanies() {
@@ -100,7 +122,62 @@ class MainActivity : AppCompatActivity() {
             }.awaitFold({
                 companies!!.remove(company)
                 companiesTl.removeTabAt(companiesTl.selectedTabPosition)
-//                initCompanies()
+            }, {
+                Toast.makeText(this@MainActivity, "Something went wrong.", Toast.LENGTH_SHORT)
+                    .show()
+            })
+        }
+    }
+
+    private fun editCompany() {
+        val newCompany = Company(
+            assetsEt.text.toString().toDouble(),
+            companies[companiesTl.selectedTabPosition].id,
+            companyNameEt.text.toString(),
+            obligationsEt.text.toString().toDouble(),
+            ownCapitalEt.text.toString().toDouble(),
+            owcEt.text.toString().toDouble(),
+            revenueEt.text.toString().toDouble(),
+            stAssetsEt.text.toString().toDouble(),
+            stNetProfitEt.text.toString().toDouble(),
+            stObligationsEt.text.toString().toDouble(),
+            companies!![companiesTl.selectedTabPosition].userId
+        )
+
+        launchUI {
+            asyncR {
+                riskAutomationApiService.createCompany(newCompany).bodyOrError()
+            }.awaitFold({
+                companies!!.removeAt(companiesTl.selectedTabPosition)
+                companies!!.add(companiesTl.selectedTabPosition, newCompany)
+            }, {
+                Toast.makeText(this@MainActivity, "Something went wrong.", Toast.LENGTH_SHORT)
+                    .show()
+            })
+        }
+    }
+
+    private fun createCompany() {
+        val newCompany = Company(
+            assetsEt.text.toString().toDouble(),
+            0,
+            companyNameEt.text.toString(),
+            obligationsEt.text.toString().toDouble(),
+            ownCapitalEt.text.toString().toDouble(),
+            owcEt.text.toString().toDouble(),
+            revenueEt.text.toString().toDouble(),
+            stAssetsEt.text.toString().toDouble(),
+            stNetProfitEt.text.toString().toDouble(),
+            stObligationsEt.text.toString().toDouble(),
+            0
+        )
+
+        launchUI {
+            asyncR {
+                riskAutomationApiService.createCompany(newCompany).bodyOrError()
+            }.awaitFold({
+                companies!!.add(newCompany)
+                companiesTl.selectTab(companiesTl.getTabAt(companies!!.size - 1))
             }, {
                 Toast.makeText(this@MainActivity, "Something went wrong.", Toast.LENGTH_SHORT)
                     .show()
