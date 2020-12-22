@@ -17,7 +17,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var riskAutomationApiService: RiskAutomationApiService
 
-    private var companies: List<Company>? = null
+    private var companies: ArrayList<Company>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
             asyncR {
                 riskAutomationApiService.getCompany(0).bodyOrError()
             }.awaitFold({
-                companies = it
+                companies = ArrayList(it)
 
                 initCompanies()
             }, {
@@ -57,12 +57,22 @@ class MainActivity : AppCompatActivity() {
             override fun onTabReselected(tab: TabLayout.Tab?) {
             }
         })
+
+        deleteBtn.setOnClickListener {
+            if (!companies.isNullOrEmpty()) {
+                deleteCompany(companies!![companiesTl.selectedTabPosition])
+            } else {
+                Toast.makeText(this@MainActivity, "Nothing to delete", Toast.LENGTH_SHORT)
+                    .show()
+            }
+        }
     }
 
     private fun initCompanies() {
         companies?.forEachIndexed { index, company ->
             companiesTl.addTab(companiesTl.newTab().also {
                 it.text = company.name
+                it.tag = company.name + company.id
             })
 
             if (index == 0) {
@@ -81,5 +91,20 @@ class MainActivity : AppCompatActivity() {
         assetsEt.setText(company.assets.toString())
         obligationsEt.setText(company.obligation.toString())
         revenueEt.setText(company.revenue.toString())
+    }
+
+    private fun deleteCompany(company: Company) {
+        launchUI {
+            asyncR {
+                riskAutomationApiService.deleteCompany(company.id).isSuccessfulOrError()
+            }.awaitFold({
+                companies!!.remove(company)
+                companiesTl.removeTabAt(companiesTl.selectedTabPosition)
+//                initCompanies()
+            }, {
+                Toast.makeText(this@MainActivity, "Something went wrong.", Toast.LENGTH_SHORT)
+                    .show()
+            })
+        }
     }
 }
